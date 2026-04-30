@@ -1,6 +1,6 @@
 {
   "name": "talisman-forge",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Talisman Forge - cross-platform agent workspace desktop app",
   "main": "main.js",
   "author": "Digital Talisman",

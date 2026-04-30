@@ -449,6 +449,18 @@ function bindActions() {
   document.getElementById('clear-review').addEventListener('click', clearReviewNotes);
   document.getElementById('export-project').addEventListener('click', exportProject);
   document.getElementById('import-project').addEventListener('click', importProject);
+
+  document.addEventListener('keydown', (e) => {
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      exportProject();
+    }
+    if (mod && e.key.toLowerCase() === 'o') {
+      e.preventDefault();
+      importProject();
+    }
+  });
 }
 
 function bindTerminalEvents() {
