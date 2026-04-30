@@ -7,45 +7,120 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header>
-      <div>
-        <h1>Talisman Forge</h1>
-        <p>The workspace to turn client problems into shipped outcomes.</p>
-      </div>
-      <span class="badge" id="forge-version">v0.1.0</span>
-    </header>
+    <div class="app-shell">
+      <aside class="sidebar glass">
+        <div class="brand">
+          <div class="logo">✦</div>
+          <div>
+            <h1>Talisman Forge</h1>
+            <p>Digital Talisman Ops OS</p>
+          </div>
+        </div>
 
-    <main>
-      <section class="card">
-        <h2>Command Room</h2>
-        <ul>
-          <li>Track outreach, build, and delivery tasks in one flow.</li>
-          <li>Attach each task to a real client objective.</li>
-          <li>Run execution checklists without leaving the workspace.</li>
-        </ul>
-      </section>
+        <nav>
+          <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+          <button class="nav-btn" data-tab="leads">Leads</button>
+          <button class="nav-btn" data-tab="outreach">Outreach</button>
+          <button class="nav-btn" data-tab="followups">Follow-ups</button>
+          <button class="nav-btn" data-tab="content">Content Engine</button>
+        </nav>
 
-      <section class="card">
-        <h2>Swarm Room</h2>
-        <ul>
-          <li>Parallel work lanes: Prospecting, Content, Delivery.</li>
-          <li>Status-first dashboard with blockers and next actions.</li>
-          <li>Designed for agency operations, not generic coding demos.</li>
-        </ul>
-      </section>
+        <div class="sidebar-footer">
+          <small id="forge-version">v0.1.0</small>
+        </div>
+      </aside>
 
-      <section class="card">
-        <h2>Review Room</h2>
-        <ul>
-          <li>Daily score: leads, outreach, replies, closes.</li>
-          <li>Quality gate before anything is sent to prospects.</li>
-          <li>Evidence-based progress snapshots.</li>
-        </ul>
-      </section>
-    </main>
+      <main class="workspace">
+        <header class="topbar glass">
+          <div>
+            <h2 id="view-title">Dashboard</h2>
+            <p id="view-subtitle">Track daily growth and execution quality.</p>
+          </div>
+          <div class="top-actions">
+            <button id="seed-demo" class="btn btn-ghost">Seed Demo Data</button>
+            <button id="clear-data" class="btn btn-danger">Clear</button>
+          </div>
+        </header>
 
-    <footer>
-      <p>Digital Talisman • Built for consistent pipeline growth.</p>
-    </footer>
+        <section id="dashboard" class="view active">
+          <div class="kpi-grid" id="kpi-grid"></div>
+          <div class="panel-grid">
+            <article class="panel glass">
+              <h3>Today focus</h3>
+              <ul id="today-focus"></ul>
+            </article>
+            <article class="panel glass">
+              <h3>Pipeline snapshot</h3>
+              <ul id="pipeline-snapshot"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="leads" class="view">
+          <article class="panel glass">
+            <h3>Add lead</h3>
+            <form id="lead-form" class="form-grid">
+              <input name="business" placeholder="Business name" required />
+              <input name="industry" placeholder="Industry" required />
+              <input name="location" placeholder="Location" required />
+              <input name="contact" placeholder="Email or WhatsApp" required />
+              <select name="priority">
+                <option>High</option>
+                <option selected>Medium</option>
+                <option>Low</option>
+              </select>
+              <button class="btn" type="submit">Add Lead</button>
+            </form>
+          </article>
+          <article class="panel glass">
+            <h3>Lead list</h3>
+            <div id="lead-list" class="list"></div>
+          </article>
+        </section>
+
+        <section id="outreach" class="view">
+          <article class="panel glass">
+            <h3>First outreach generator</h3>
+            <form id="outreach-form" class="form-grid">
+              <select id="outreach-lead" required></select>
+              <select id="outreach-variant">
+                <option value="A">Variant A: direct problem opener</option>
+                <option value="B">Variant B: personalized observation</option>
+              </select>
+              <button class="btn" type="submit">Generate</button>
+            </form>
+            <textarea id="outreach-output" rows="9" placeholder="Generated outreach appears here..."></textarea>
+          </article>
+        </section>
+
+        <section id="followups" class="view">
+          <article class="panel glass">
+            <h3>Follow-up queue</h3>
+            <div id="followup-list" class="list"></div>
+          </article>
+        </section>
+
+        <section id="content" class="view">
+          <article class="panel glass">
+            <h3>Daily content pack</h3>
+            <button class="btn" id="generate-content">Generate content pack</button>
+            <div class="content-block">
+              <h4>LinkedIn</h4>
+              <textarea id="linkedin-post" rows="5"></textarea>
+            </div>
+            <div class="content-block">
+              <h4>Reddit replies (2-3)</h4>
+              <textarea id="reddit-replies" rows="10"></textarea>
+            </div>
+            <div class="content-block">
+              <h4>TikTok idea</h4>
+              <textarea id="tiktok-idea" rows="4"></textarea>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
   </body>
 </html>
