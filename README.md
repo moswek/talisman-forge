@@ -3,7 +3,6 @@
 Talisman Forge is a standalone, cross-platform agent workspace desktop app.
 
 ## Product direction
-BridgeSpace-style environment with stronger execution control:
 - task board with status flow
 - native terminal run sessions (live stdout/stderr)
 - agent swarm tracking lanes
