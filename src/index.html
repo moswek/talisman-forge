@@ -7,118 +7,77 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar glass">
+    <div class="layout">
+      <aside class="left rail panel">
         <div class="brand">
-          <div class="logo">✦</div>
+          <div class="glyph">✦</div>
           <div>
             <h1>Talisman Forge</h1>
-            <p>Digital Talisman Ops OS</p>
+            <p>Agent Workspace OS</p>
           </div>
         </div>
-
-        <nav>
-          <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
-          <button class="nav-btn" data-tab="leads">Leads</button>
-          <button class="nav-btn" data-tab="outreach">Outreach</button>
-          <button class="nav-btn" data-tab="followups">Follow-ups</button>
-          <button class="nav-btn" data-tab="content">Content Engine</button>
-        </nav>
-
-        <div class="sidebar-footer">
-          <small id="forge-version">v0.1.0</small>
-        </div>
+        <button class="action" id="new-room">+ New room</button>
+        <div id="room-list" class="room-list"></div>
       </aside>
 
-      <main class="workspace">
-        <header class="topbar glass">
+      <main class="center">
+        <header class="top panel">
           <div>
-            <h2 id="view-title">Dashboard</h2>
-            <p id="view-subtitle">Track daily growth and execution quality.</p>
+            <h2 id="room-title">Command Room</h2>
+            <p id="room-sub">Coordinate tasks, terminals, and agent runs in one view.</p>
           </div>
-          <div class="top-actions">
-            <button id="seed-demo" class="btn btn-ghost">Seed Demo Data</button>
-            <button id="clear-data" class="btn btn-danger">Clear</button>
+          <div class="chips">
+            <span class="chip" id="meta-version">v0.1.0</span>
+            <span class="chip online">Live</span>
           </div>
         </header>
 
-        <section id="dashboard" class="view active">
-          <div class="kpi-grid" id="kpi-grid"></div>
-          <div class="panel-grid">
-            <article class="panel glass">
-              <h3>Today focus</h3>
-              <ul id="today-focus"></ul>
-            </article>
-            <article class="panel glass">
-              <h3>Pipeline snapshot</h3>
-              <ul id="pipeline-snapshot"></ul>
-            </article>
-          </div>
-        </section>
-
-        <section id="leads" class="view">
-          <article class="panel glass">
-            <h3>Add lead</h3>
-            <form id="lead-form" class="form-grid">
-              <input name="business" placeholder="Business name" required />
-              <input name="industry" placeholder="Industry" required />
-              <input name="location" placeholder="Location" required />
-              <input name="contact" placeholder="Email or WhatsApp" required />
-              <select name="priority">
-                <option>High</option>
-                <option selected>Medium</option>
-                <option>Low</option>
-              </select>
-              <button class="btn" type="submit">Add Lead</button>
+        <section class="grid">
+          <article class="panel card">
+            <h3>Task Board</h3>
+            <form id="task-form" class="inline">
+              <input id="task-input" placeholder="Add task with acceptance criteria" required />
+              <button>Add</button>
             </form>
+            <div id="task-list" class="list"></div>
           </article>
-          <article class="panel glass">
-            <h3>Lead list</h3>
-            <div id="lead-list" class="list"></div>
-          </article>
-        </section>
 
-        <section id="outreach" class="view">
-          <article class="panel glass">
-            <h3>First outreach generator</h3>
-            <form id="outreach-form" class="form-grid">
-              <select id="outreach-lead" required></select>
-              <select id="outreach-variant">
-                <option value="A">Variant A: direct problem opener</option>
-                <option value="B">Variant B: personalized observation</option>
-              </select>
-              <button class="btn" type="submit">Generate</button>
+          <article class="panel card">
+            <h3>Terminal Sessions</h3>
+            <form id="terminal-form" class="inline">
+              <input id="terminal-input" placeholder="Start session: run tests / build / lint" required />
+              <button>Queue</button>
             </form>
-            <textarea id="outreach-output" rows="9" placeholder="Generated outreach appears here..."></textarea>
+            <div id="terminal-list" class="list"></div>
           </article>
-        </section>
 
-        <section id="followups" class="view">
-          <article class="panel glass">
-            <h3>Follow-up queue</h3>
-            <div id="followup-list" class="list"></div>
+          <article class="panel card">
+            <h3>Agent Swarm</h3>
+            <form id="agent-form" class="inline">
+              <input id="agent-input" placeholder="Spawn worker goal" required />
+              <button>Spawn</button>
+            </form>
+            <div id="agent-list" class="list"></div>
           </article>
-        </section>
 
-        <section id="content" class="view">
-          <article class="panel glass">
-            <h3>Daily content pack</h3>
-            <button class="btn" id="generate-content">Generate content pack</button>
-            <div class="content-block">
-              <h4>LinkedIn</h4>
-              <textarea id="linkedin-post" rows="5"></textarea>
-            </div>
-            <div class="content-block">
-              <h4>Reddit replies (2-3)</h4>
-              <textarea id="reddit-replies" rows="10"></textarea>
-            </div>
-            <div class="content-block">
-              <h4>TikTok idea</h4>
-              <textarea id="tiktok-idea" rows="4"></textarea>
-            </div>
+          <article class="panel card">
+            <h3>Review Room</h3>
+            <div class="stats" id="stats"></div>
+            <textarea id="review-notes" rows="8" placeholder="Decision notes, release checklist, and ship/no-ship rationale..."></textarea>
           </article>
         </section>
       </main>
+
+      <aside class="right rail panel">
+        <h3>Context Stack</h3>
+        <p class="muted">Keep the right context pinned while work runs in parallel.</p>
+        <div id="context-list" class="list"></div>
+        <form id="context-form" class="stack">
+          <input id="context-title" placeholder="Context title" required />
+          <textarea id="context-body" rows="5" placeholder="Key constraints, links, assumptions" required></textarea>
+          <button>Add Context</button>
+        </form>
+      </aside>
     </div>
 
     <script src="./app.js"></script>
