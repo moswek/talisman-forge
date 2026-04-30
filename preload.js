@@ -1,12 +1,14 @@
-const { contextBridge } = require('electron');
-const pkg = require('./package.json');
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('forgeMeta', {
-  version: pkg.version,
-  name: pkg.productName || pkg.name
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-  const version = document.getElementById('forge-version');
-  if (version) version.textContent = `v${pkg.version}`;
+contextBridge.exposeInMainWorld('forge', {
+  getMeta: () => ipcRenderer.invoke('app:get-meta'),
+  saveProject: (data) => ipcRenderer.invoke('project:save', data),
+  openProject: () => ipcRenderer.invoke('project:open'),
+  terminalStart: (payload) => ipcRenderer.invoke('terminal:start', payload),
+  terminalStop: (payload) => ipcRenderer.invoke('terminal:stop', payload),
+  onTerminalEvent: (handler) => {
+    const listener = (_event, payload) => handler(payload);
+    ipcRenderer.on('terminal:event', listener);
+    return () => ipcRenderer.removeListener('terminal:event', listener);
+  }
 });

@@ -1,23 +1,36 @@
 # Talisman Forge
 
-Talisman Forge is a side-project desktop app inspired by modern agent workspaces.
+Talisman Forge is a standalone, cross-platform agent workspace desktop app.
 
-## Scope (isolated from agency ops)
-This project is intentionally independent from Digital Talisman CRM/outreach automation.
-It focuses on a general-purpose build workspace for:
-- multi-room coordination
-- task tracking
-- terminal session queueing
-- agent swarm orchestration
-- context stack + review workflow
+## Product direction
+BridgeSpace-style environment with stronger execution control:
+- task board with status flow
+- native terminal run sessions (live stdout/stderr)
+- agent swarm tracking lanes
+- context stack + timeline + review notes
+- import/export project snapshots
 
 ## Platform targets
 - macOS 12+
 - Windows
 - Linux
 
-## Current status
-Polished MVP shell with interactive workspace mechanics and local persistence.
+## Status
+Phase 1 complete (functional desktop MVP).
+
+### Implemented
+- Room-based workspace architecture
+- Live terminal execution via Electron IPC + child processes
+- Agent/task/context lifecycle
+- Timeline and review workflow
+- Local persistence + JSON export/import
+
+### Next for production readiness
+1. Embedded PTY interactive terminal (stdin + resize)
+2. Workspace tabs and pane docking
+3. Command templates and keyboard shortcuts
+4. Crash reporting and diagnostics
+5. Auto-update channel + signed release pipeline
 
 ## Run
 ```bash
@@ -26,14 +39,7 @@ npm install
 npm run dev
 ```
 
-## Build installers
+## Build
 ```bash
 npm run build
 ```
-
-## Next phase
-- Native terminal pane embedding (pty)
-- Multi-agent run timelines
-- Project/repo binding
-- Prompt/context templates
-- Session replay and export

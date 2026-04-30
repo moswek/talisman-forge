@@ -1,33 +1,54 @@
 {
   "name": "talisman-forge",
-  "version": "0.1.0",
-  "description": "Talisman Forge desktop app",
+  "version": "0.3.0",
+  "description": "Talisman Forge - cross-platform agent workspace desktop app",
   "main": "main.js",
+  "author": "Digital Talisman",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
+    "build": "electron-builder",
     "build:dir": "electron-builder --dir",
-    "build": "electron-builder"
+    "build:mac": "electron-builder --mac dmg",
+    "build:win": "electron-builder --win nsis",
+    "build:linux": "electron-builder --linux AppImage deb"
   },
   "build": {
     "appId": "com.digitaltalisman.forge",
     "productName": "Talisman Forge",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
     "files": [
       "main.js",
       "preload.js",
       "src/**/*",
       "package.json"
     ],
+    "asar": true,
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
       "category": "public.app-category.productivity",
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "sign": false
     },
     "win": {
       "target": ["nsis"]
     },
     "linux": {
-      "target": ["AppImage", "deb"]
+      "target": ["AppImage", "deb"],
+      "category": "Development"
     }
   },
   "devDependencies": {

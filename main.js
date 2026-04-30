@@ -1,22 +1,125 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron');
 const path = require('path');
+const fs = require('fs/promises');
+const { spawn } = require('child_process');
+
+let mainWindow;
+const sessions = new Map();
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 1360,
-    height: 860,
-    minWidth: 1100,
-    minHeight: 700,
-    backgroundColor: '#0b1020',
+  mainWindow = new BrowserWindow({
+    width: 1500,
+    height: 920,
+    minWidth: 1180,
+    minHeight: 760,
+    backgroundColor: '#070b16',
+    title: 'Talisman Forge',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      sandbox: false
     }
   });
 
-  win.loadFile(path.join(__dirname, 'src', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 }
+
+function emitTerminalEvent(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('terminal:event', payload);
+  }
+}
+
+ipcMain.handle('app:get-meta', () => ({
+  platform: process.platform,
+  version: app.getVersion(),
+  name: app.getName(),
+  theme: nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
+  cwd: process.cwd()
+}));
+
+ipcMain.handle('project:save', async (_event, data) => {
+  const win = BrowserWindow.getFocusedWindow() || mainWindow;
+  const { canceled, filePath } = await dialog.showSaveDialog(win, {
+    title: 'Export Talisman Forge Project',
+    defaultPath: `talisman-forge-project-${new Date().toISOString().slice(0, 10)}.json`,
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  });
+
+  if (canceled || !filePath) return { ok: false, canceled: true };
+
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+  return { ok: true, filePath };
+});
+
+ipcMain.handle('project:open', async () => {
+  const win = BrowserWindow.getFocusedWindow() || mainWindow;
+  const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    title: 'Import Talisman Forge Project',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  });
+
+  if (canceled || !filePaths?.length) return { ok: false, canceled: true };
+
+  const filePath = filePaths[0];
+  const raw = await fs.readFile(filePath, 'utf8');
+  const parsed = JSON.parse(raw);
+
+  return { ok: true, filePath, data: parsed };
+});
+
+ipcMain.handle('terminal:start', (_event, payload) => {
+  const sessionId = payload?.sessionId;
+  const command = payload?.command;
+  const cwd = payload?.cwd || process.cwd();
+
+  if (!sessionId || !command) {
+    return { ok: false, error: 'Missing sessionId or command' };
+  }
+  if (sessions.has(sessionId)) {
+    return { ok: false, error: 'Session already exists' };
+  }
+
+  const child = spawn(command, {
+    cwd,
+    shell: true,
+    env: process.env
+  });
+
+  sessions.set(sessionId, child);
+
+  emitTerminalEvent({ sessionId, type: 'start', pid: child.pid });
+
+  child.stdout.on('data', (buf) => {
+    emitTerminalEvent({ sessionId, type: 'stdout', chunk: String(buf) });
+  });
+
+  child.stderr.on('data', (buf) => {
+    emitTerminalEvent({ sessionId, type: 'stderr', chunk: String(buf) });
+  });
+
+  child.on('close', (code, signal) => {
+    sessions.delete(sessionId);
+    emitTerminalEvent({ sessionId, type: 'exit', code, signal: signal || null });
+  });
+
+  child.on('error', (err) => {
+    sessions.delete(sessionId);
+    emitTerminalEvent({ sessionId, type: 'error', error: err.message });
+  });
+
+  return { ok: true, sessionId, pid: child.pid };
+});
+
+ipcMain.handle('terminal:stop', (_event, payload) => {
+  const sessionId = payload?.sessionId;
+  if (!sessionId || !sessions.has(sessionId)) return { ok: false, error: 'Session not found' };
+  const child = sessions.get(sessionId);
+  child.kill('SIGTERM');
+  return { ok: true };
+});
 
 app.whenReady().then(() => {
   createWindow();

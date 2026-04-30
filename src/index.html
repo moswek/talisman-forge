@@ -13,72 +13,111 @@
           <div class="glyph">✦</div>
           <div>
             <h1>Talisman Forge</h1>
-            <p>Agent Workspace OS</p>
+            <p>Agent workspace for builders</p>
           </div>
         </div>
-        <button class="action" id="new-room">+ New room</button>
+
+        <div class="quick-actions">
+          <button class="action" id="new-room">+ New room</button>
+          <button class="action ghost" id="seed-demo">Seed demo</button>
+        </div>
+
         <div id="room-list" class="room-list"></div>
+
+        <div class="left-footer">
+          <button class="action ghost" id="export-project">Export JSON</button>
+          <button class="action ghost" id="import-project">Import JSON</button>
+          <small id="meta-version">v0.0.0</small>
+        </div>
       </aside>
 
       <main class="center">
         <header class="top panel">
           <div>
             <h2 id="room-title">Command Room</h2>
-            <p id="room-sub">Coordinate tasks, terminals, and agent runs in one view.</p>
+            <p id="room-sub">Coordinate tasks, terminals, context, and AI workers in one place.</p>
           </div>
           <div class="chips">
-            <span class="chip" id="meta-version">v0.1.0</span>
-            <span class="chip online">Live</span>
+            <span class="chip" id="meta-platform">desktop</span>
+            <span class="chip online">Live Session</span>
           </div>
         </header>
 
         <section class="grid">
           <article class="panel card">
-            <h3>Task Board</h3>
+            <div class="card-header">
+              <h3>Task Board</h3>
+              <small id="task-open-count">0 open</small>
+            </div>
             <form id="task-form" class="inline">
-              <input id="task-input" placeholder="Add task with acceptance criteria" required />
+              <input id="task-input" placeholder="Add task with clear acceptance criteria" required />
               <button>Add</button>
             </form>
             <div id="task-list" class="list"></div>
           </article>
 
           <article class="panel card">
-            <h3>Terminal Sessions</h3>
+            <div class="card-header">
+              <h3>Terminal Sessions</h3>
+              <small>Queue and track runs</small>
+            </div>
             <form id="terminal-form" class="inline">
-              <input id="terminal-input" placeholder="Start session: run tests / build / lint" required />
+              <input id="terminal-input" placeholder="ex: npm test --watch" required />
               <button>Queue</button>
             </form>
             <div id="terminal-list" class="list"></div>
           </article>
 
           <article class="panel card">
-            <h3>Agent Swarm</h3>
-            <form id="agent-form" class="inline">
-              <input id="agent-input" placeholder="Spawn worker goal" required />
+            <div class="card-header">
+              <h3>Agent Swarm</h3>
+              <small>Parallel workers</small>
+            </div>
+            <form id="agent-form" class="inline triple">
+              <input id="agent-input" placeholder="Worker goal" required />
+              <select id="agent-role">
+                <option value="builder">Builder</option>
+                <option value="reviewer">Reviewer</option>
+                <option value="scout">Scout</option>
+              </select>
               <button>Spawn</button>
             </form>
             <div id="agent-list" class="list"></div>
           </article>
 
           <article class="panel card">
-            <h3>Review Room</h3>
+            <div class="card-header">
+              <h3>Review Room</h3>
+              <small>Ship decisions</small>
+            </div>
             <div class="stats" id="stats"></div>
-            <textarea id="review-notes" rows="8" placeholder="Decision notes, release checklist, and ship/no-ship rationale..."></textarea>
+            <textarea id="review-notes" rows="7" placeholder="Release checklist, trade-offs, and ship/no-ship decision..."></textarea>
+            <div class="inline buttons-row">
+              <button type="button" id="save-review">Save notes</button>
+              <button type="button" id="clear-review" class="danger">Clear notes</button>
+            </div>
           </article>
         </section>
       </main>
 
       <aside class="right rail panel">
         <h3>Context Stack</h3>
-        <p class="muted">Keep the right context pinned while work runs in parallel.</p>
-        <div id="context-list" class="list"></div>
+        <p class="muted">Pin constraints, links, and assumptions to keep workers aligned.</p>
+
         <form id="context-form" class="stack">
           <input id="context-title" placeholder="Context title" required />
-          <textarea id="context-body" rows="5" placeholder="Key constraints, links, assumptions" required></textarea>
+          <textarea id="context-body" rows="4" placeholder="Key constraints, references, goals" required></textarea>
           <button>Add Context</button>
         </form>
+
+        <div id="context-list" class="list"></div>
+
+        <h3 class="timeline-title">Run Timeline</h3>
+        <div id="timeline-list" class="list"></div>
       </aside>
     </div>
+
+    <div id="toast" class="toast hidden"></div>
 
     <script src="./app.js"></script>
   </body>
