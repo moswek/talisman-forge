@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('forge', {
   terminalResize: (payload) => ipcRenderer.invoke('terminal:resize', payload),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   diagnosticsPath: () => ipcRenderer.invoke('diagnostics:path'),
+  telemetryStatus: () => ipcRenderer.invoke('telemetry:status'),
+  telemetryTest: () => ipcRenderer.invoke('telemetry:test'),
   onTerminalEvent: (handler) => {
     const listener = (_event, payload) => handler(payload);
     ipcRenderer.on('terminal:event', listener);

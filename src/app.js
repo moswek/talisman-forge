@@ -5,7 +5,7 @@ const roomTemplates = [
   { name: 'Swarm Room', sub: 'Run builders, reviewers, and scouts in parallel with visibility.' },
   { name: 'Review Room', sub: 'Merge outputs and decide what ships.' }
 ];
-const state = { meta: { platform: 'desktop', version: '0.0.0', cwd: '' }, rooms: [], tasks: [], terminals: [], agents: [], contexts: [], timeline: [], reviewNotes: '', ui: { left: 280, right: 340, timelineFilter: 'all' } };
+const state = { meta: { platform: 'desktop', version: '0.0.0', cwd: '' }, rooms: [], tasks: [], terminals: [], agents: [], contexts: [], timeline: [], reviewNotes: '', ui: { left: 280, right: 340, timelineFilter: 'all' }, telemetry: { enabled: false, endpoint: null } };
 const id = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const shortTime = (iso) => new Date(iso).toLocaleString();
@@ -143,6 +143,8 @@ function bindResizers(){
 }
 
 function bindActions(){ document.getElementById('new-room').addEventListener('click',createRoom); document.getElementById('seed-demo').addEventListener('click',seedDemo); document.getElementById('save-review').addEventListener('click',saveReviewNotes); document.getElementById('clear-review').addEventListener('click',clearReviewNotes); document.getElementById('export-project').addEventListener('click',exportProject); document.getElementById('import-project').addEventListener('click',importProject);
+ const telemetryBtn = document.getElementById('send-telemetry-test');
+ if (telemetryBtn) telemetryBtn.addEventListener('click', runTelemetryTest);
  document.addEventListener('keydown',(e)=>{ const mod=e.metaKey||e.ctrlKey; if(mod&&e.key.toLowerCase()==='s'){e.preventDefault(); exportProject();} if(mod&&e.key.toLowerCase()==='o'){e.preventDefault(); importProject();} if(mod&&e.key.toLowerCase()==='k'){e.preventDefault(); document.getElementById('terminal-input').focus();} });
  window.addEventListener('resize', async ()=>{
    if(!window.forge?.terminalResize) return;
@@ -167,9 +169,29 @@ async function hydrateMeta(){
       const diag = await window.forge.diagnosticsPath();
       if (diag?.ok) pushTimeline('Diagnostics path', diag.path);
     }
+    if (window.forge?.telemetryStatus) {
+      const tel = await window.forge.telemetryStatus();
+      if (tel?.ok) {
+        state.telemetry = { enabled: Boolean(tel.enabled), endpoint: tel.endpoint || null };
+        pushTimeline('Telemetry status', tel.enabled ? 'enabled' : 'disabled');
+      }
+    }
   } catch {}
 }
 
+async function runTelemetryTest() {
+  if (!window.forge?.telemetryTest) return;
+  const res = await window.forge.telemetryTest();
+  if (res?.ok) {
+    pushTimeline('Telemetry test', `sent (${res.status || 'ok'})`);
+    toast('Telemetry test sent');
+  } else {
+    pushTimeline('Telemetry test failed', res?.reason || res?.error || 'not configured');
+    toast(`Telemetry unavailable: ${res?.reason || res?.error || 'not configured'}`, true);
+  }
+  saveState();
+  renderTimeline();
+}
 async function checkUpdates(){
   if (!window.forge?.checkForUpdates) return;
   try {

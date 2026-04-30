@@ -17,16 +17,46 @@ try {
 
 let mainWindow;
 const sessions = new Map();
+const telemetryEndpoint = process.env.TF_CRASH_ENDPOINT || '';
+
+async function postTelemetry(payload) {
+  if (!telemetryEndpoint) return { ok: false, skipped: true, reason: 'No telemetry endpoint configured' };
+  try {
+    const res = await fetch(telemetryEndpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-talisman-app': 'forge'
+      },
+      body: JSON.stringify(payload)
+    });
+    return { ok: res.ok, status: res.status };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+}
 
 async function writeCrashLog(kind, error) {
   try {
     const dir = path.join(app.getPath('userData'), 'logs');
     await fs.mkdir(dir, { recursive: true });
-    const file = path.join(dir, `crash-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
-    const body = `[${new Date().toISOString()}] ${kind}\n${error?.stack || error?.message || String(error)}\n`;
+    const at = new Date().toISOString();
+    const file = path.join(dir, `crash-${at.replace(/[:.]/g, '-')}.log`);
+    const message = error?.stack || error?.message || String(error);
+    const body = `[${at}] ${kind}\n${message}\n`;
     await fs.writeFile(file, body, 'utf8');
+    await postTelemetry({
+      app: 'talisman-forge',
+      kind,
+      at,
+      version: app.getVersion(),
+      platform: process.platform,
+      message,
+      file
+    });
+    return file;
   } catch {
-    // noop
+    return null;
   }
 }
 
@@ -242,6 +272,25 @@ ipcMain.handle('diagnostics:path', async () => {
   const dir = path.join(app.getPath('userData'), 'logs');
   await fs.mkdir(dir, { recursive: true });
   return { ok: true, path: dir };
+});
+
+ipcMain.handle('telemetry:status', async () => ({
+  ok: true,
+  enabled: Boolean(telemetryEndpoint),
+  endpoint: telemetryEndpoint || null
+}));
+
+ipcMain.handle('telemetry:test', async () => {
+  const payload = {
+    app: 'talisman-forge',
+    kind: 'telemetry-test',
+    at: new Date().toISOString(),
+    version: app.getVersion(),
+    platform: process.platform,
+    message: 'Manual telemetry test event'
+  };
+  const res = await postTelemetry(payload);
+  return { ok: Boolean(res?.ok), ...res };
 });
 
 app.whenReady().then(() => {

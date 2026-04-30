@@ -28,11 +28,11 @@ Release candidate track (v0.5.0).
 - Timeline + filtering
 - Local persistence + JSON export/import
 - Update-check scaffold via electron-updater
-- CI build workflows + tag-based release workflow
+- CI build workflows + tag-based release workflow (Linux/Windows/macOS matrix)
+- Crash log telemetry endpoint wiring (`TF_CRASH_ENDPOINT`) + manual test action
 
 ### Remaining before full production
 1. Signed installers + notarization credentials
-2. Crash telemetry endpoint wiring
 
 ## Run
 ```bash
@@ -45,3 +45,13 @@ npm run dev
 ```bash
 npm run build
 ```
+
+## Optional crash telemetry
+Set an endpoint before launching to receive JSON crash/test events:
+
+```bash
+export TF_CRASH_ENDPOINT="https://your-endpoint.example.com/talisman-forge/crash"
+npm run dev
+```
+
+In app: use **Send telemetry test** to verify delivery.

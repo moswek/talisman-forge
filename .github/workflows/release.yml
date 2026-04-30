@@ -6,10 +6,16 @@ on:
       - 'v*'
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     permissions:
-      contents: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,13 +30,89 @@ jobs:
       - name: Smoke
         run: npm run smoke
 
-      - name: Build Linux artifacts
+      - name: Build Linux
+        if: matrix.os == 'ubuntu-latest'
         run: npm run build:linux
 
-      - name: Checksums
-        run: npm run checksums
+      - name: Build Windows
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
 
-      - name: Release
+      - name: Build macOS
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+
+      - name: Upload Linux artifacts
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          if-no-files-found: error
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+
+      - name: Upload macOS artifacts
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-macos
+          if-no-files-found: error
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.yml
+            dist/*.yaml
+            dist/*.blockmap
+
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-linux
+          path: dist
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-windows
+          path: dist
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-macos
+          path: dist
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: |
