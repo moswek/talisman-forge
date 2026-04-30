@@ -5,7 +5,7 @@ Talisman Forge is a standalone, cross-platform agent workspace desktop app.
 ## Product direction
 A high-speed desktop workspace for solo builders and small teams:
 - task board with status flow
-- native terminal run sessions (live stdout/stderr)
+- native terminal run sessions (PTY first, spawn fallback)
 - agent swarm tracking lanes
 - context stack + timeline + review notes
 - import/export project snapshots
@@ -21,8 +21,8 @@ Release candidate track (v0.5.0).
 ### Implemented
 - Room-based workspace architecture
 - Resizable side panes
-- Live terminal execution via Electron IPC + child processes
-- Terminal QoL: rerun, clear output, copy log
+- Live terminal execution via Electron IPC + node-pty (spawn fallback when unavailable)
+- Terminal input + resize channel for interactive command flows
 - Command templates + keyboard shortcuts (`Ctrl/Cmd+K`, `Ctrl/Cmd+S`, `Ctrl/Cmd+O`)
 - Agent/task/context lifecycle
 - Timeline + filtering
@@ -32,8 +32,7 @@ Release candidate track (v0.5.0).
 
 ### Remaining before full production
 1. Signed installers + notarization credentials
-2. Interactive PTY terminal input/resize
-3. Crash telemetry endpoint wiring
+2. Crash telemetry endpoint wiring
 
 ## Run
 ```bash

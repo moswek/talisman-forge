@@ -4,6 +4,17 @@ const fs = require('fs/promises');
 const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
+let pty;
+try {
+  pty = require('node-pty');
+} catch {
+  try {
+    pty = require('@homebridge/node-pty-prebuilt-multiarch');
+  } catch {
+    pty = null;
+  }
+}
+
 let mainWindow;
 const sessions = new Map();
 
@@ -87,6 +98,8 @@ ipcMain.handle('terminal:start', (_event, payload) => {
   const sessionId = payload?.sessionId;
   const command = payload?.command;
   const cwd = payload?.cwd || process.cwd();
+  const cols = Number(payload?.cols) || 120;
+  const rows = Number(payload?.rows) || 36;
 
   if (!sessionId || !command) {
     return { ok: false, error: 'Missing sessionId or command' };
@@ -95,15 +108,47 @@ ipcMain.handle('terminal:start', (_event, payload) => {
     return { ok: false, error: 'Session already exists' };
   }
 
+  if (pty) {
+    try {
+      const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || 'bash');
+      const args = process.platform === 'win32' ? ['-NoLogo', '-NoProfile', '-Command', command] : ['-lc', command];
+      const term = pty.spawn(shell, args, {
+        name: 'xterm-256color',
+        cols,
+        rows,
+        cwd,
+        env: process.env
+      });
+
+      const wrapper = { type: 'pty', proc: term, pid: term.pid };
+      sessions.set(sessionId, wrapper);
+      emitTerminalEvent({ sessionId, type: 'start', pid: term.pid, mode: 'pty' });
+
+      term.onData((chunk) => {
+        emitTerminalEvent({ sessionId, type: 'stdout', chunk: String(chunk) });
+      });
+
+      term.onExit(({ exitCode, signal }) => {
+        sessions.delete(sessionId);
+        emitTerminalEvent({ sessionId, type: 'exit', code: exitCode, signal: signal || null });
+      });
+
+      return { ok: true, sessionId, pid: term.pid, mode: 'pty' };
+    } catch (err) {
+      return { ok: false, error: `PTY spawn failed: ${err.message}` };
+    }
+  }
+
   const child = spawn(command, {
     cwd,
     shell: true,
     env: process.env
   });
 
-  sessions.set(sessionId, child);
+  const wrapper = { type: 'spawn', proc: child, pid: child.pid };
+  sessions.set(sessionId, wrapper);
 
-  emitTerminalEvent({ sessionId, type: 'start', pid: child.pid });
+  emitTerminalEvent({ sessionId, type: 'start', pid: child.pid, mode: 'spawn' });
 
   child.stdout.on('data', (buf) => {
     emitTerminalEvent({ sessionId, type: 'stdout', chunk: String(buf) });
@@ -123,24 +168,54 @@ ipcMain.handle('terminal:start', (_event, payload) => {
     emitTerminalEvent({ sessionId, type: 'error', error: err.message });
   });
 
-  return { ok: true, sessionId, pid: child.pid };
+  return { ok: true, sessionId, pid: child.pid, mode: 'spawn' };
 });
 
 ipcMain.handle('terminal:stop', (_event, payload) => {
   const sessionId = payload?.sessionId;
   if (!sessionId || !sessions.has(sessionId)) return { ok: false, error: 'Session not found' };
-  const child = sessions.get(sessionId);
-  child.kill('SIGTERM');
-  return { ok: true };
+  const session = sessions.get(sessionId);
+  try {
+    if (session.type === 'pty') {
+      session.proc.kill();
+    } else {
+      session.proc.kill('SIGTERM');
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
 });
 
 ipcMain.handle('terminal:input', (_event, payload) => {
   const sessionId = payload?.sessionId;
   const data = payload?.data;
   if (!sessionId || !sessions.has(sessionId)) return { ok: false, error: 'Session not found' };
-  const child = sessions.get(sessionId);
+  const session = sessions.get(sessionId);
   try {
-    child.stdin.write(data);
+    if (session.type === 'pty') {
+      session.proc.write(data);
+    } else {
+      session.proc.stdin.write(data);
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('terminal:resize', (_event, payload) => {
+  const sessionId = payload?.sessionId;
+  const cols = Number(payload?.cols);
+  const rows = Number(payload?.rows);
+  if (!sessionId || !sessions.has(sessionId)) return { ok: false, error: 'Session not found' };
+  if (!Number.isFinite(cols) || !Number.isFinite(rows) || cols < 20 || rows < 5) {
+    return { ok: false, error: 'Invalid terminal size' };
+  }
+  const session = sessions.get(sessionId);
+  if (session.type !== 'pty') return { ok: true, skipped: true };
+  try {
+    session.proc.resize(Math.floor(cols), Math.floor(rows));
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error.message };
@@ -181,6 +256,18 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', () => {
+  for (const [, session] of sessions) {
+    try {
+      if (session.type === 'pty') session.proc.kill();
+      else session.proc.kill('SIGTERM');
+    } catch {
+      // noop
+    }
+  }
+  sessions.clear();
 });
 
 app.on('window-all-closed', () => {

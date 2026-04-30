@@ -31,10 +31,20 @@ function addTask(title){ state.tasks.unshift({id:id(),roomId:activeRoom().id,tit
 function cycleTask(taskId){ const t=state.tasks.find(x=>x.id===taskId); if(!t) return; const seq=['pending','in_progress','done']; t.status=seq[(seq.indexOf(t.status)+1)%seq.length]; pushTimeline('Task updated',`${t.title} → ${t.status}`); saveState(); renderAll(); }
 function removeTask(taskId){ const t=state.tasks.find(x=>x.id===taskId); state.tasks=state.tasks.filter(x=>x.id!==taskId); pushTimeline('Task removed',t?.title||taskId); saveState(); renderAll(); }
 
+function getTerminalSize() {
+  const sample = document.querySelector('.term-output');
+  const width = sample?.clientWidth || 900;
+  const height = sample?.clientHeight || 220;
+  const cols = Math.max(60, Math.floor(width / 8));
+  const rows = Math.max(16, Math.floor(height / 18));
+  return { cols, rows };
+}
+
 async function startTerminal(item){ if(item.status==='running') return; item.status='starting'; saveState(); renderTerminals();
- const res = await window.forge.terminalStart({ sessionId:item.id, command:item.title, cwd: state.meta.cwd || undefined });
+ const { cols, rows } = getTerminalSize();
+ const res = await window.forge.terminalStart({ sessionId:item.id, command:item.title, cwd: state.meta.cwd || undefined, cols, rows });
  if(!res?.ok){ item.status='error'; item.output=`${item.output||''}\n[error] ${res?.error||'Failed to start'}`; pushTimeline('Terminal failed',item.title); saveState(); renderAll(); return; }
- item.pid=res.pid; item.status='running'; pushTimeline('Terminal started',`${item.title} (pid ${res.pid})`); saveState(); renderAll(); }
+ item.pid=res.pid; item.status='running'; item.mode=res.mode||'spawn'; pushTimeline('Terminal started',`${item.title} (pid ${res.pid}${item.mode ? ` • ${item.mode}` : ''})`); saveState(); renderAll(); }
 
 function addTerminal(command){ const item={ id:id(), roomId:activeRoom().id, title:command, status:'queued', output:'', pid:null, createdAt:now() }; state.terminals.unshift(item); pushTimeline('Terminal queued',command); saveState(); renderAll(); startTerminal(item); }
 async function stopTerminal(itemId){ const item=state.terminals.find(t=>t.id===itemId); if(!item||item.status!=='running') return; await window.forge.terminalStop({sessionId:itemId}); item.status='stopping'; pushTimeline('Terminal stop requested',item.title); saveState(); renderAll(); }
@@ -79,7 +89,7 @@ async function sendTerminalInput(itemId, data) {
 
 function terminalClass(status){ if(status==='running')return'running'; if(status==='done')return'done'; if(status==='error')return'error'; return''; }
 function renderTerminals(){ const room=activeRoom(); const rows=state.terminals.filter(x=>x.roomId===room.id); const wrap=document.getElementById('terminal-list'); if(!rows.length) return wrap.innerHTML='<p class="muted">No terminal sessions queued.</p>';
- wrap.innerHTML=rows.map(x=>`<div class="item terminal ${terminalClass(x.status)}"><div><strong>${x.title}</strong><small>${x.status}${x.pid?` • pid ${x.pid}`:''} • ${shortTime(x.createdAt)}</small></div><pre class="term-output">${(x.output||'').slice(-2500).replace(/</g,'&lt;')}</pre><div class="inline term-input-row"><input data-term-input="${x.id}" placeholder="send input to process" /><button data-term-send="${x.id}">Send</button></div><div class="item-actions"><button data-term-start="${x.id}">Run</button><button data-term-stop="${x.id}">Stop</button><button data-term-rerun="${x.id}">Rerun</button><button data-term-clear="${x.id}">Clear</button><button data-term-copy="${x.id}">Copy Log</button><button data-term-remove="${x.id}" class="danger ghost">X</button></div></div>`).join('');
+ wrap.innerHTML=rows.map(x=>`<div class="item terminal ${terminalClass(x.status)}"><div><strong>${x.title}</strong><small>${x.status}${x.pid?` • pid ${x.pid}`:''}${x.mode?` • ${x.mode}`:''} • ${shortTime(x.createdAt)}</small></div><pre class="term-output">${(x.output||'').slice(-2500).replace(/</g,'&lt;')}</pre><div class="inline term-input-row"><input data-term-input="${x.id}" placeholder="send input to process" /><button data-term-send="${x.id}">Send</button></div><div class="item-actions"><button data-term-start="${x.id}">Run</button><button data-term-stop="${x.id}">Stop</button><button data-term-rerun="${x.id}">Rerun</button><button data-term-clear="${x.id}">Clear</button><button data-term-copy="${x.id}">Copy Log</button><button data-term-remove="${x.id}" class="danger ghost">X</button></div></div>`).join('');
  wrap.querySelectorAll('[data-term-start]').forEach(b=>b.addEventListener('click',()=>{const item=state.terminals.find(t=>t.id===b.dataset.termStart); if(item) startTerminal(item);}));
  wrap.querySelectorAll('[data-term-stop]').forEach(b=>b.addEventListener('click',()=>stopTerminal(b.dataset.termStop)));
  wrap.querySelectorAll('[data-term-rerun]').forEach(b=>b.addEventListener('click',()=>rerunTerminal(b.dataset.termRerun)));
@@ -134,6 +144,12 @@ function bindResizers(){
 
 function bindActions(){ document.getElementById('new-room').addEventListener('click',createRoom); document.getElementById('seed-demo').addEventListener('click',seedDemo); document.getElementById('save-review').addEventListener('click',saveReviewNotes); document.getElementById('clear-review').addEventListener('click',clearReviewNotes); document.getElementById('export-project').addEventListener('click',exportProject); document.getElementById('import-project').addEventListener('click',importProject);
  document.addEventListener('keydown',(e)=>{ const mod=e.metaKey||e.ctrlKey; if(mod&&e.key.toLowerCase()==='s'){e.preventDefault(); exportProject();} if(mod&&e.key.toLowerCase()==='o'){e.preventDefault(); importProject();} if(mod&&e.key.toLowerCase()==='k'){e.preventDefault(); document.getElementById('terminal-input').focus();} });
+ window.addEventListener('resize', async ()=>{
+   if(!window.forge?.terminalResize) return;
+   const { cols, rows } = getTerminalSize();
+   const running = state.terminals.filter(t=>t.status==='running');
+   await Promise.all(running.map(t=>window.forge.terminalResize({ sessionId: t.id, cols, rows }).catch(()=>null)));
+ });
 }
 
 function bindTerminalEvents(){ if(!window.forge?.onTerminalEvent) return; window.forge.onTerminalEvent((evt)=>{ const item=state.terminals.find(t=>t.id===evt.sessionId); if(!item) return;
