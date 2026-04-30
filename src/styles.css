@@ -58,6 +58,7 @@ textarea { resize: vertical; }
 .terminal.done { border-color: #3569b4; }
 .terminal.error { border-color: #7b2f44; }
 .term-output { margin: 0; max-height: 180px; overflow: auto; white-space: pre-wrap; background: #0a1222; border: 1px solid var(--line); border-radius: 8px; padding: .5rem; color: #cde3ff; font-size: .75rem; line-height: 1.35; }
+.term-input-row { grid-template-columns: 1fr auto; margin: 0; }
 .cmd-templates { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .tpl { font-size: .72rem; padding: .35rem .5rem; border-radius: 999px; background: #111f38; border: 1px solid #2a446e; cursor: pointer; }
 .timeline-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('forge', {
   openProject: () => ipcRenderer.invoke('project:open'),
   terminalStart: (payload) => ipcRenderer.invoke('terminal:start', payload),
   terminalStop: (payload) => ipcRenderer.invoke('terminal:stop', payload),
+  terminalInput: (payload) => ipcRenderer.invoke('terminal:input', payload),
   checkForUpdates: () => ipcRenderer.invoke('updater:check'),
   diagnosticsPath: () => ipcRenderer.invoke('diagnostics:path'),
   onTerminalEvent: (handler) => {

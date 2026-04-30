@@ -65,15 +65,28 @@ function renderTasks(){ const room=activeRoom(); const tasks=state.tasks.filter(
  wrap.innerHTML=tasks.map(t=>`<div class="item"><div><strong>${t.title}</strong><small>${t.status} • ${shortTime(t.createdAt)}</small></div><div class="item-actions"><button data-task-cycle="${t.id}">Next</button><button data-task-remove="${t.id}" class="danger ghost">X</button></div></div>`).join('');
  wrap.querySelectorAll('[data-task-cycle]').forEach(b=>b.addEventListener('click',()=>cycleTask(b.dataset.taskCycle))); wrap.querySelectorAll('[data-task-remove]').forEach(b=>b.addEventListener('click',()=>removeTask(b.dataset.taskRemove))); }
 
+async function sendTerminalInput(itemId, data) {
+  const item = state.terminals.find((t) => t.id === itemId);
+  if (!item || !window.forge?.terminalInput) return;
+  const payload = data.endsWith('\n') ? data : `${data}\n`;
+  const res = await window.forge.terminalInput({ sessionId: itemId, data: payload });
+  if (!res?.ok) {
+    toast(`Input failed: ${res?.error || 'unknown'}`, true);
+    return;
+  }
+  pushTimeline('Terminal input', item.title);
+}
+
 function terminalClass(status){ if(status==='running')return'running'; if(status==='done')return'done'; if(status==='error')return'error'; return''; }
 function renderTerminals(){ const room=activeRoom(); const rows=state.terminals.filter(x=>x.roomId===room.id); const wrap=document.getElementById('terminal-list'); if(!rows.length) return wrap.innerHTML='<p class="muted">No terminal sessions queued.</p>';
- wrap.innerHTML=rows.map(x=>`<div class="item terminal ${terminalClass(x.status)}"><div><strong>${x.title}</strong><small>${x.status}${x.pid?` • pid ${x.pid}`:''} • ${shortTime(x.createdAt)}</small></div><pre class="term-output">${(x.output||'').slice(-2500).replace(/</g,'&lt;')}</pre><div class="item-actions"><button data-term-start="${x.id}">Run</button><button data-term-stop="${x.id}">Stop</button><button data-term-rerun="${x.id}">Rerun</button><button data-term-clear="${x.id}">Clear</button><button data-term-copy="${x.id}">Copy Log</button><button data-term-remove="${x.id}" class="danger ghost">X</button></div></div>`).join('');
+ wrap.innerHTML=rows.map(x=>`<div class="item terminal ${terminalClass(x.status)}"><div><strong>${x.title}</strong><small>${x.status}${x.pid?` • pid ${x.pid}`:''} • ${shortTime(x.createdAt)}</small></div><pre class="term-output">${(x.output||'').slice(-2500).replace(/</g,'&lt;')}</pre><div class="inline term-input-row"><input data-term-input="${x.id}" placeholder="send input to process" /><button data-term-send="${x.id}">Send</button></div><div class="item-actions"><button data-term-start="${x.id}">Run</button><button data-term-stop="${x.id}">Stop</button><button data-term-rerun="${x.id}">Rerun</button><button data-term-clear="${x.id}">Clear</button><button data-term-copy="${x.id}">Copy Log</button><button data-term-remove="${x.id}" class="danger ghost">X</button></div></div>`).join('');
  wrap.querySelectorAll('[data-term-start]').forEach(b=>b.addEventListener('click',()=>{const item=state.terminals.find(t=>t.id===b.dataset.termStart); if(item) startTerminal(item);}));
  wrap.querySelectorAll('[data-term-stop]').forEach(b=>b.addEventListener('click',()=>stopTerminal(b.dataset.termStop)));
  wrap.querySelectorAll('[data-term-rerun]').forEach(b=>b.addEventListener('click',()=>rerunTerminal(b.dataset.termRerun)));
  wrap.querySelectorAll('[data-term-clear]').forEach(b=>b.addEventListener('click',()=>clearTerminalOutput(b.dataset.termClear)));
  wrap.querySelectorAll('[data-term-copy]').forEach(b=>b.addEventListener('click',()=>exportTerminalLog(b.dataset.termCopy)));
- wrap.querySelectorAll('[data-term-remove]').forEach(b=>b.addEventListener('click',()=>removeTerminal(b.dataset.termRemove))); }
+ wrap.querySelectorAll('[data-term-remove]').forEach(b=>b.addEventListener('click',()=>removeTerminal(b.dataset.termRemove)));
+ wrap.querySelectorAll('[data-term-send]').forEach((b)=>b.addEventListener('click',()=>{ const input = wrap.querySelector(`[data-term-input="${b.dataset.termSend}"]`); if (!input || !input.value.trim()) return; sendTerminalInput(b.dataset.termSend, input.value.trim()); input.value=''; })); }
 
 function renderAgents(){ const room=activeRoom(); const rows=state.agents.filter(x=>x.roomId===room.id); const wrap=document.getElementById('agent-list'); if(!rows.length) return wrap.innerHTML='<p class="muted">No active workers.</p>';
  wrap.innerHTML=rows.map(x=>`<div class="item"><div><strong>${x.title}</strong><small>${x.role} • ${x.status} • ${shortTime(x.createdAt)}</small></div><div class="item-actions"><button data-agent-cycle="${x.id}">Cycle</button><button data-agent-remove="${x.id}" class="danger ghost">X</button></div></div>`).join('');

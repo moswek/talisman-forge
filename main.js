@@ -134,6 +134,19 @@ ipcMain.handle('terminal:stop', (_event, payload) => {
   return { ok: true };
 });
 
+ipcMain.handle('terminal:input', (_event, payload) => {
+  const sessionId = payload?.sessionId;
+  const data = payload?.data;
+  if (!sessionId || !sessions.has(sessionId)) return { ok: false, error: 'Session not found' };
+  const child = sessions.get(sessionId);
+  try {
+    child.stdin.write(data);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+});
+
 ipcMain.handle('updater:check', async () => {
   try {
     const result = await autoUpdater.checkForUpdates();
