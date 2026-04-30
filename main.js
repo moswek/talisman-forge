@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron')
 const path = require('path');
 const fs = require('fs/promises');
 const { spawn } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 const sessions = new Map();
@@ -119,6 +120,22 @@ ipcMain.handle('terminal:stop', (_event, payload) => {
   const child = sessions.get(sessionId);
   child.kill('SIGTERM');
   return { ok: true };
+});
+
+ipcMain.handle('updater:check', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    const info = result?.updateInfo || null;
+    return {
+      ok: true,
+      updateAvailable: Boolean(info && info.version && info.version !== app.getVersion()),
+      currentVersion: app.getVersion(),
+      latestVersion: info?.version || app.getVersion(),
+      channel: info?.channel || 'latest'
+    };
+  } catch (error) {
+    return { ok: false, error: error.message, currentVersion: app.getVersion() };
+  }
 });
 
 app.whenReady().then(() => {

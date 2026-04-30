@@ -1,6 +1,6 @@
 {
   "name": "talisman-forge",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Talisman Forge - cross-platform agent workspace desktop app",
   "main": "main.js",
   "author": "Digital Talisman",
@@ -12,7 +12,9 @@
     "build:dir": "electron-builder --dir",
     "build:mac": "electron-builder --mac dmg",
     "build:win": "electron-builder --win nsis",
-    "build:linux": "electron-builder --linux AppImage deb"
+    "build:linux": "electron-builder --linux AppImage deb",
+    "smoke": "node scripts/smoke.js",
+    "checksums": "node scripts/checksums.js"
   },
   "build": {
     "appId": "com.digitaltalisman.forge",
@@ -49,10 +51,18 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "category": "Development"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "moswek",
+        "repo": "talisman-forge"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "^31.7.7",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "electron-updater": "^6.3.9"
   }
 }

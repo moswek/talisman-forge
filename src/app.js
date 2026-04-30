@@ -132,6 +132,23 @@ function bindTerminalEvents(){ if(!window.forge?.onTerminalEvent) return; window
 
 async function hydrateMeta(){ try { const meta=await window.forge.getMeta(); state.meta={ platform:meta.platform, version:meta.version, cwd:meta.cwd||'' }; } catch {} }
 
-async function init(){ loadState(); ensureBase(); await hydrateMeta(); bindForms(); bindActions(); bindResizers(); bindTerminalEvents(); saveState(); renderAll(); }
+async function checkUpdates(){
+  if (!window.forge?.checkForUpdates) return;
+  try {
+    const res = await window.forge.checkForUpdates();
+    if (res?.ok && res.updateAvailable) {
+      pushTimeline('Update available', `v${res.latestVersion}`);
+      toast(`Update available: v${res.latestVersion}`);
+    } else if (res?.ok) {
+      pushTimeline('Update check', `up-to-date (${res.currentVersion})`);
+    } else {
+      pushTimeline('Update check failed', res?.error || 'unknown error');
+    }
+  } catch (e) {
+    pushTimeline('Update check failed', e.message || 'unknown error');
+  }
+}
+
+async function init(){ loadState(); ensureBase(); await hydrateMeta(); await checkUpdates(); bindForms(); bindActions(); bindResizers(); bindTerminalEvents(); saveState(); renderAll(); }
 
 init();
