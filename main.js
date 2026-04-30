@@ -7,6 +7,18 @@ const { autoUpdater } = require('electron-updater');
 let mainWindow;
 const sessions = new Map();
 
+async function writeCrashLog(kind, error) {
+  try {
+    const dir = path.join(app.getPath('userData'), 'logs');
+    await fs.mkdir(dir, { recursive: true });
+    const file = path.join(dir, `crash-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+    const body = `[${new Date().toISOString()}] ${kind}\n${error?.stack || error?.message || String(error)}\n`;
+    await fs.writeFile(file, body, 'utf8');
+  } catch {
+    // noop
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1500,
@@ -138,7 +150,20 @@ ipcMain.handle('updater:check', async () => {
   }
 });
 
+ipcMain.handle('diagnostics:path', async () => {
+  const dir = path.join(app.getPath('userData'), 'logs');
+  await fs.mkdir(dir, { recursive: true });
+  return { ok: true, path: dir };
+});
+
 app.whenReady().then(() => {
+  process.on('uncaughtException', (err) => {
+    writeCrashLog('uncaughtException', err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    writeCrashLog('unhandledRejection', reason);
+  });
+
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -130,7 +130,16 @@ function bindTerminalEvents(){ if(!window.forge?.onTerminalEvent) return; window
  else if(evt.type==='error'){ item.status='error'; item.output=`${item.output||''}\n[error] ${evt.error}`; item.pid=null; pushTimeline('Terminal error',item.title); }
  saveState(); renderTerminals(); renderStats(); renderTimeline(); }); }
 
-async function hydrateMeta(){ try { const meta=await window.forge.getMeta(); state.meta={ platform:meta.platform, version:meta.version, cwd:meta.cwd||'' }; } catch {} }
+async function hydrateMeta(){
+  try {
+    const meta=await window.forge.getMeta();
+    state.meta={ platform:meta.platform, version:meta.version, cwd:meta.cwd||'' };
+    if (window.forge?.diagnosticsPath) {
+      const diag = await window.forge.diagnosticsPath();
+      if (diag?.ok) pushTimeline('Diagnostics path', diag.path);
+    }
+  } catch {}
+}
 
 async function checkUpdates(){
   if (!window.forge?.checkForUpdates) return;
