@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="layout">
-      <aside class="left rail panel">
+    <div class="layout" id="layout">
+      <aside class="left rail panel" id="left-rail">
         <div class="brand">
           <div class="glyph">✦</div>
           <div>
@@ -30,6 +30,8 @@
           <small id="meta-version">v0.0.0</small>
         </div>
       </aside>
+
+      <div class="resizer" id="resizer-left"></div>
 
       <main class="center">
         <header class="top panel">
@@ -65,6 +67,7 @@
               <input id="terminal-input" placeholder="ex: npm test --watch" required />
               <button>Queue</button>
             </form>
+            <div class="cmd-templates" id="cmd-templates"></div>
             <div id="terminal-list" class="list"></div>
           </article>
 
@@ -100,7 +103,9 @@
         </section>
       </main>
 
-      <aside class="right rail panel">
+      <div class="resizer" id="resizer-right"></div>
+
+      <aside class="right rail panel" id="right-rail">
         <h3>Context Stack</h3>
         <p class="muted">Pin constraints, links, and assumptions to keep workers aligned.</p>
 
@@ -112,7 +117,16 @@
 
         <div id="context-list" class="list"></div>
 
-        <h3 class="timeline-title">Run Timeline</h3>
+        <div class="timeline-row">
+          <h3 class="timeline-title">Run Timeline</h3>
+          <select id="timeline-filter">
+            <option value="all">All</option>
+            <option value="Terminal">Terminal</option>
+            <option value="Task">Task</option>
+            <option value="Agent">Agent</option>
+            <option value="Room">Room</option>
+          </select>
+        </div>
         <div id="timeline-list" class="list"></div>
       </aside>
     </div>
